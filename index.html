@@ -1,0 +1,2718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thermodynamics Interactive Simulation Lab</title>
+  <style>
+    :root {
+      --bg-main: #060a12;
+      --bg-panel: #0f172a;
+      --bg-card: #090d16;
+      --border-subtle: #1e293b;
+      --border-Mid: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-sky: #38bdf8;
+      --accent-amber: #fbbf24;
+      --accent-emerald: #34d399;
+      --accent-rose: #fb7185;
+      --accent-purple: #c084fc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    /* Top Navigation Bar */
+    .lab-header {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #0284c7, #2563eb, #4f46e5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+      border: 1px solid rgba(125, 211, 252, 0.4);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #7dd3fc;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Navigation Tabs */
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #090d16;
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      appearance: none;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.18s ease;
+    }
+
+    .tab-btn:hover {
+      color: #e2e8f0;
+      background: rgba(30, 41, 59, 0.6);
+    }
+
+    .tab-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: rgba(125, 211, 252, 0.4);
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);
+    }
+
+    .tab-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Main Workspace & Strict View Switching */
+    .workspace {
+      flex: 1;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sim-view {
+      display: none !important;
+      width: 100%;
+      flex: 1;
+    }
+
+    .sim-view.active-grid {
+      display: grid !important;
+      grid-template-columns: 1fr 370px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .sim-view.active-flex {
+      display: flex !important;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    @media (max-width: 1100px) {
+      .sim-view.active-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Canvas Stage (View 1) */
+    .canvas-stage-card {
+      position: relative;
+      background: #080c17;
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .stage-top-bar {
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .stage-info-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-sky);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mode-pill {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #7dd3fc;
+    }
+
+    .temp-legend-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .temp-gradient-bar {
+      width: 130px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #2563eb 0%, #06b6d4 32%, #facc15 65%, #ef4444 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .canvas-holder {
+      width: 100%;
+      height: 550px;
+      position: relative;
+      background: #070b14;
+    }
+
+    canvas.sim-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .stage-bottom-controls {
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.92);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .burner-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      appearance: none;
+      border: 1px solid var(--border-Mid);
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-action:hover {
+      background: #334155;
+      border-color: #64748b;
+    }
+
+    .btn-action:active {
+      transform: scale(0.97);
+    }
+
+    .btn-cool {
+      background: rgba(8, 51, 68, 0.85);
+      border-color: rgba(6, 182, 212, 0.5);
+      color: #67e8f9;
+    }
+
+    .btn-cool:hover {
+      background: rgba(14, 116, 144, 0.6);
+    }
+
+    .btn-heat {
+      background: rgba(124, 45, 18, 0.85);
+      border-color: rgba(249, 115, 22, 0.5);
+      color: #fdba74;
+    }
+
+    .btn-heat:hover {
+      background: rgba(194, 65, 12, 0.6);
+    }
+
+    .btn-trace {
+      background: rgba(6, 78, 59, 0.7);
+      border-color: rgba(52, 211, 153, 0.45);
+      color: #6ee7b7;
+    }
+
+    .slider-wrap {
+      display: flex;
+      flex-direction: column;
+      width: 165px;
+      gap: 3px;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    input[type="range"].thermo-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #06b6d4, #334155 50%, #f97316);
+      outline: none;
+    }
+
+    input[type="range"].thermo-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 2px solid var(--accent-sky);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+    }
+
+    /* Upper-Right Control Panel (View 1) */
+    .control-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-Mid);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    }
+
+    .panel-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent-sky);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .stats-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 3px 0 1px;
+    }
+
+    .stat-unit {
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .first-law-box {
+      background: rgba(9, 13, 22, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    .first-law-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .energy-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+
+    .energy-cell {
+      background: #0f172a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 7px;
+      padding: 4px;
+    }
+
+    .energy-cell-label {
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .energy-cell-val {
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: 2px 0;
+    }
+
+    /* Dropdown Select */
+    .thermo-select {
+      width: 100%;
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-Mid);
+      border-radius: 9px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .thermo-select:focus {
+      border-color: var(--accent-sky);
+    }
+
+    .sub-caption {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Toggle Switches List */
+    .switch-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .switch-row {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 7px 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .switch-row-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .switch-row-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .thermo-switch {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .thermo-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .switch-track {
+      width: 42px;
+      height: 22px;
+      background-color: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 999px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background-color: #94a3b8;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .thermo-switch input:checked + .switch-track {
+      background-color: rgba(14, 165, 233, 0.3);
+      border-color: var(--accent-sky);
+    }
+
+    .thermo-switch input:checked + .switch-track .switch-thumb {
+      transform: translateX(20px);
+      background-color: var(--accent-sky);
+    }
+
+    .thermo-switch.amber input:checked + .switch-track {
+      background-color: rgba(245, 158, 11, 0.3);
+      border-color: var(--accent-amber);
+    }
+
+    .thermo-switch.amber input:checked + .switch-track .switch-thumb {
+      background-color: var(--accent-amber);
+    }
+
+    .hint-box {
+      margin-top: 6px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.35;
+    }
+
+    /* Cycle Views (View 2 & View 3) */
+    .cycle-ribbon {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .cycle-stage-wrap {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      background: #070b14;
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Solid Squares that Become Dashed on Hover with Temporary Process Text Beneath */
+    .cycle-square-enclosure {
+      position: absolute;
+      border: 3px solid rgba(226, 232, 240, 0.88);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.06);
+      cursor: pointer;
+      z-index: 30;
+      transition: background-color 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .cycle-square-enclosure:hover,
+    .cycle-square-enclosure.touch-active {
+      border-style: dashed !important;
+      border-color: #38bdf8 !important;
+      background: rgba(56, 189, 248, 0.09);
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.35), inset 0 0 12px rgba(56, 189, 248, 0.12);
+    }
+
+    .square-corner-tag {
+      position: absolute;
+      top: -11px;
+      left: 10px;
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 1px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .cycle-square-enclosure:hover .square-corner-tag,
+    .cycle-square-enclosure.touch-active .square-corner-tag {
+      background: #0284c7;
+      border-color: #7dd3fc;
+      color: #ffffff;
+    }
+
+    .process-popup-beneath {
+      position: absolute;
+      top: calc(100% + 9px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-4px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+      background: rgba(9, 13, 24, 0.97);
+      border: 1.5px solid #38bdf8;
+      border-radius: 8px;
+      padding: 8px 13px;
+      min-width: 235px;
+      max-width: 300px;
+      text-align: center;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.85), 0 0 16px rgba(56, 189, 248, 0.3);
+      z-index: 60;
+    }
+
+    .process-popup-beneath::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 10px;
+      height: 10px;
+      background: rgba(9, 13, 24, 0.97);
+      border-left: 1.5px solid #38bdf8;
+      border-top: 1.5px solid #38bdf8;
+    }
+
+    .cycle-square-enclosure:hover .process-popup-beneath,
+    .cycle-square-enclosure.touch-active .process-popup-beneath {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .popup-step-tag {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-sky);
+    }
+
+    .popup-process-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 2px 0 4px;
+    }
+
+    .popup-process-desc {
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.35;
+    }
+
+    .cycle-legend-overlay {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 9px 13px;
+      font-size: 11px;
+      color: #cbd5e1;
+      max-width: 440px;
+      pointer-events: none;
+      z-index: 25;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="lab-header">
+    <div class="brand-group">
+      <div class="brand-icon">&Delta;U</div>
+      <div>
+        <div class="brand-title">
+          <span>Thermodynamics Interactive Simulation Lab</span>
+          <span class="brand-badge mono">PV = nRT &bull; &Delta;U = Q &minus; W</span>
+        </div>
+        <div class="brand-sub">First Law Cross-Sectional Piston, Heat Engine (Piston) &amp; Reverse Heat Engine (Refrigeration Compressor)</div>
+      </div>
+    </div>
+
+    <!-- 3 Switchable View Tabs -->
+    <nav class="tab-bar" role="tablist">
+      <button id="tabBtn-1" type="button" class="tab-btn active" onclick="switchTab(1)">
+        <span class="tab-dot" style="background:#38bdf8;"></span>
+        <span>1. First Law (Piston)</span>
+      </button>
+      <button id="tabBtn-2" type="button" class="tab-btn" onclick="switchTab(2)">
+        <span class="tab-dot" style="background:#fb923c;"></span>
+        <span>2. Heat Engine</span>
+      </button>
+      <button id="tabBtn-3" type="button" class="tab-btn" onclick="switchTab(3)">
+        <span class="tab-dot" style="background:#22d3ee;"></span>
+        <span>3. Reverse Heat Engine (Refrigeration)</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="workspace">
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 1: FIRST LAW OF THERMODYNAMICS (CROSS-SECTIONAL PISTON)          -->
+    <!-- ===================================================================== -->
+    <section id="view-tab-1" class="sim-view active-grid">
+      
+      <!-- Left / Center Interactive Piston-Cylinder + Displacement Trace Canvas -->
+      <div class="canvas-stage-card">
+        <div class="stage-top-bar">
+          <div class="stage-info-title">
+            <span>Cross-Sectional Piston &amp; Left Vertical Displacement Trace</span>
+            <span id="processBadgeTab1" class="mode-pill mono">ADIABATIC (FREE)</span>
+          </div>
+          <div class="temp-legend-wrap mono">
+            <span>100 K (Cold)</span>
+            <div class="temp-gradient-bar"></div>
+            <span>1100 K (Hot)</span>
+          </div>
+        </div>
+
+        <div class="canvas-holder" id="pistonCanvasHolder">
+          <canvas id="pistonCanvas" class="sim-canvas" width="880" height="550"></canvas>
+        </div>
+
+        <div class="stage-bottom-controls">
+          <div class="burner-group">
+            <button id="btnCoolHold" type="button" class="btn-action btn-cool">&#10052; Cool (&minus;Q)</button>
+            <div class="slider-wrap">
+              <div class="slider-labels mono">
+                <span style="color:#22d3ee;">COOL</span>
+                <span id="thermalRateLabel" style="color:#f8fafc;font-weight:700;">0 W</span>
+                <span style="color:#fb923c;">HEAT</span>
+              </div>
+              <input id="thermalSlider" type="range" min="-100" max="100" value="0" class="thermo-slider" />
+            </div>
+            <button id="btnHeatHold" type="button" class="btn-action btn-heat">&#128293; Heat (+Q)</button>
+          </div>
+
+          <div class="burner-group">
+            <button type="button" class="btn-action btn-trace" onclick="clearDisplacementTrace()">Clear Trace Line</button>
+            <button type="button" class="btn-action" onclick="resetTab1EnergyCounters()">Zero &Delta;U, Q, W</button>
+            <button type="button" class="btn-action" style="color:#38bdf8;" onclick="resetTab1State()">Reset Piston</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- UPPER-RIGHT HAND CORNER CONTROL PANEL (EXACT VERTICAL ORDER):       -->
+      <!-- 1. Stats (Pressure, Volume, Temperature + First Law)                -->
+      <!-- 2. Dropdown (Monoatomic, Diatomic, Polyatomic gas)                  -->
+      <!-- 3. Switches to hold Pressure, Volume, and/or Temperature constant   -->
+      <!-- 4. Switch to Manually / Automatically do the simulation             -->
+      <!-- =================================================================== -->
+      <aside class="control-panel">
+
+        <!-- 1. STATS (PRESSURE, VOLUME, TEMPERATURE) -->
+        <div>
+          <div class="panel-section-title">
+            <span>1. Live Thermodynamic Stats</span>
+            <span id="dispDeltaYHeader" class="mono" style="color:#34d399;">&Delta;y: 0.0 cm</span>
+          </div>
+
+          <div class="stats-grid-3">
+            <div class="stat-box">
+              <div class="stat-label">
+                <span>Pressure</span>
+                <span id="lockIconP" style="display:none;color:#fbbf24;">&#128274;</span>
+              </div>
+              <div id="statPressure" class="stat-value mono" style="color:#fb7185;">100.0</div>
+              <div class="stat-unit mono">kPa</div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">
+                <span>Volume</span>
+                <span id="lockIconV" style="display:none;color:#fbbf24;">&#128274;</span>
+              </div>
+              <div id="statVolume" class="stat-value mono" style="color:#34d399;">24.9</div>
+              <div class="stat-unit mono">Liters (L)</div>
+            </div>
+
+            <div class="stat-box">
+              <div class="stat-label">
+                <span>Temp</span>
+                <span id="lockIconT" style="display:none;color:#fbbf24;">&#128274;</span>
+              </div>
+              <div id="statTemp" class="stat-value mono" style="color:#fbbf24;">300</div>
+              <div class="stat-unit mono">Kelvin (K)</div>
+            </div>
+          </div>
+
+          <div class="first-law-box mono">
+            <div class="first-law-header">
+              <span>FIRST LAW: <strong style="color:#f8fafc;">&Delta;U = Q &minus; W</strong></span>
+              <span>v<sub>rms</sub>: <strong id="statVrms" style="color:#38bdf8;">485 m/s</strong></span>
+            </div>
+            <div class="energy-grid-3">
+              <div class="energy-cell">
+                <div class="energy-cell-label">&Delta;U (Int. Energy)</div>
+                <div id="statDeltaU" class="energy-cell-val" style="color:#c084fc;">0.00 kJ</div>
+              </div>
+              <div class="energy-cell">
+                <div class="energy-cell-label">Q (Heat In)</div>
+                <div id="statHeatQ" class="energy-cell-val" style="color:#fdba74;">0.00 kJ</div>
+              </div>
+              <div class="energy-cell">
+                <div class="energy-cell-label">W (Work by Gas)</div>
+                <div id="statWorkW" class="energy-cell-val" style="color:#67e8f9;">0.00 kJ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- 2. DROPDOWN BENEATH STATS: MONOATOMIC, DIATOMIC, POLYATOMIC GAS -->
+        <div>
+          <label for="gasTypeSelect" class="panel-section-title" style="cursor:pointer;">
+            <span>2. Molecular Gas Type (Atomicity)</span>
+          </label>
+          <select id="gasTypeSelect" class="thermo-select" onchange="handleGasTypeChange(this.value)">
+            <option value="mono">Monoatomic Gas (He / Ar) &mdash; &gamma; = 1.67, f = 3</option>
+            <option value="dia">Diatomic Gas (N&#8322; / O&#8322;) &mdash; &gamma; = 1.40, f = 5</option>
+            <option value="poly">Polyatomic Gas (CO&#8322; / CH&#8324;) &mdash; &gamma; = 1.33, f = 6</option>
+          </select>
+          <div id="gasInfoSubtext" class="sub-caption mono">
+            <span>Single-atom spheres</span>
+            <span>C<sub>V</sub> = 1.5R | &gamma; = 5/3</span>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- 3. SWITCHES BENEATH DROPDOWN: HOLD P, V, AND/OR T CONSTANT -->
+        <div>
+          <div class="panel-section-title">
+            <span>3. Hold State Variables Constant</span>
+            <span class="mono" style="font-size:10px;color:#94a3b8;">Constraints</span>
+          </div>
+
+          <div class="switch-list">
+            <div class="switch-row">
+              <div>
+                <div class="switch-row-title">Hold Pressure Constant</div>
+                <div class="switch-row-sub mono">Isobaric (&Delta;P = 0, V &prop; T)</div>
+              </div>
+              <label class="thermo-switch" aria-label="Hold Pressure Constant">
+                <input type="checkbox" id="toggleConstP" onchange="handleConstraintToggle()" />
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+            </div>
+
+            <div class="switch-row">
+              <div>
+                <div class="switch-row-title">Hold Volume Constant</div>
+                <div class="switch-row-sub mono">Isochoric (&Delta;V = 0, W = 0, Piston Locked)</div>
+              </div>
+              <label class="thermo-switch" aria-label="Hold Volume Constant">
+                <input type="checkbox" id="toggleConstV" onchange="handleConstraintToggle()" />
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+            </div>
+
+            <div class="switch-row">
+              <div>
+                <div class="switch-row-title">Hold Temperature Constant</div>
+                <div class="switch-row-sub mono">Isothermal (&Delta;T = 0, &Delta;U = 0, P &prop; 1/V)</div>
+              </div>
+              <label class="thermo-switch" aria-label="Hold Temperature Constant">
+                <input type="checkbox" id="toggleConstT" onchange="handleConstraintToggle()" />
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+            </div>
+          </div>
+
+          <div id="constraintHintBox" class="hint-box">
+            <strong style="color:#38bdf8;">Adiabatic / Free Mode:</strong> All switches off. Dragging the piston follows <span class="mono">PV<sup>&gamma;</sup> = const</span>.
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- 4. SWITCH BENEATH: MANUALLY / AUTOMATICALLY DO THE SIMULATION -->
+        <div>
+          <div class="panel-section-title">
+            <span>4. Simulation Drive Mode</span>
+          </div>
+          <div class="switch-row" style="padding:9px 12px;">
+            <div>
+              <div id="simModeTitle" class="switch-row-title">Manual Simulation Mode</div>
+              <div id="simModeDesc" class="switch-row-sub">Drag piston up/down or use thermal burner</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="mono" style="font-size:10px;color:#94a3b8;">MANUAL</span>
+              <label class="thermo-switch amber" aria-label="Toggle Manual or Automatic Simulation">
+                <input type="checkbox" id="toggleAutoSim" onchange="handleAutoModeToggle(this.checked)" />
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+              <span class="mono" style="font-size:10px;color:#fbbf24;font-weight:700;">AUTO</span>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 2: HEAT ENGINE (PISTON ENGINE + SOLID-TO-DASHED HOVER SQUARES)   -->
+    <!-- ===================================================================== -->
+    <section id="view-tab-2" class="sim-view">
+      <div class="cycle-ribbon">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span class="mode-pill mono" style="background:rgba(249,115,22,0.18);border-color:rgba(249,115,22,0.45);color:#fdba74;font-weight:700;">
+            HEAT ENGINE (PISTON CYCLE)
+          </span>
+          <span style="font-size:12px;color:#e2e8f0;">
+            <strong style="color:#38bdf8;">Hover over any SOLID SQUARE</strong> to turn it <strong style="color:#38bdf8;text-decoration:underline dashed;">DASHED</strong> and temporarily display the thermodynamic step/process directly beneath it!
+          </span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;">
+          <div class="mono" style="background:#090d16;padding:4px 10px;border-radius:7px;border:1px solid #1e293b;">
+            <span style="color:#94a3b8;">Piston Stroke: </span>
+            <span id="heStrokeLiveBadge" style="color:#fbbf24;font-weight:700;">ADIABATIC EXPANSION</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="mono" style="color:#94a3b8;">Speed:</span>
+            <input id="heSpeedRange" type="range" min="0.2" max="2.0" step="0.05" value="0.75"
+              oninput="heatEngineState.speed = parseFloat(this.value)"
+              class="thermo-slider" style="width:90px;background:#334155;" />
+          </div>
+          <button id="heHoldExpandBtn" type="button" class="btn-action" onclick="holdHeatEngineExpansion()">
+            Hold Pushed Out (Expansion)
+          </button>
+          <button id="hePauseBtn" type="button" class="btn-action" onclick="toggleHeatEnginePause()">
+            &#9208; Pause
+          </button>
+        </div>
+      </div>
+
+      <div id="heStageContainer" class="cycle-stage-wrap">
+        <canvas id="heatEngineCanvas" class="sim-canvas" width="1100" height="580"></canvas>
+
+        <!-- Stage 1 Square: Hot Reservoir (Top) -->
+        <div id="heBox-hot" class="cycle-square-enclosure">
+          <span class="square-corner-tag">Stage 1 &bull; Hot Reservoir Pipe</span>
+          <div class="process-popup-beneath">
+            <div class="popup-step-tag">Hot Boiler Stage (T<sub>H</sub>)</div>
+            <div class="popup-process-name">Isothermal / Isobaric Heat Addition (+Q<sub>H</sub>)</div>
+            <div class="popup-process-desc">
+              High-temperature heat source energizes the gas: molecules turn <strong style="color:#fb7185;">hot red</strong> and accelerate to high speed (high pressure).
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 2 Square: Piston Engine (Right - Dynamically shows Adiabatic Expansion when pushed out) -->
+        <div id="heBox-engine" class="cycle-square-enclosure">
+          <span class="square-corner-tag">Stage 2 &bull; Piston Engine</span>
+          <div class="process-popup-beneath">
+            <div class="popup-step-tag">Work Output Stage (Piston-Cylinder)</div>
+            <div id="hePistonProcessTitle" class="popup-process-name" style="color:#fbbf24;">Adiabatic Expansion</div>
+            <div id="hePistonProcessSub" class="popup-process-desc">
+              Piston is currently pushed OUT (Work +W<sub>out</sub>): volume increases (molecules spread apart), pressure &amp; temperature drop.
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 3 Square: Cold Reservoir (Bottom) -->
+        <div id="heBox-cold" class="cycle-square-enclosure">
+          <span class="square-corner-tag">Stage 3 &bull; Cold Reservoir Pipe</span>
+          <div class="process-popup-beneath">
+            <div class="popup-step-tag">Cold Sink Stage (T<sub>C</sub>)</div>
+            <div class="popup-process-name">Isothermal / Isobaric Heat Rejection (&minus;Q<sub>C</sub>)</div>
+            <div class="popup-process-desc">
+              Waste heat is rejected to the cold sink: molecules cool to <strong style="color:#38bdf8;">icy blue</strong> and slow down (low pressure).
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 4 Square: Compression Return (Left) -->
+        <div id="heBox-pump" class="cycle-square-enclosure">
+          <span class="square-corner-tag">Stage 4 &bull; Return Compression</span>
+          <div class="process-popup-beneath">
+            <div class="popup-step-tag">Return Feed Stage</div>
+            <div class="popup-process-name">Adiabatic Pressurization &amp; Return</div>
+            <div class="popup-process-desc">
+              Gas is compressed back into the high-pressure boiler zone: intermolecular distance shrinks and molecular velocity rises.
+            </div>
+          </div>
+        </div>
+
+        <div class="cycle-legend-overlay">
+          <div style="font-weight:700;color:#fff;margin-bottom:3px;">Molecular Indicators Across Pipes &amp; Piston:</div>
+          <div>&bull; <strong style="color:#fb7185;">Color (Temperature):</strong> Bright Red/Orange (Hot T<sub>H</sub>) &rarr; Cool Blue (Cold T<sub>C</sub>)</div>
+          <div>&bull; <strong style="color:#fbbf24;">Velocity (Pressure):</strong> Fast movement in High-Pressure pipe &rarr; Slow drift in Low-Pressure pipe</div>
+          <div>&bull; <strong style="color:#34d399;">Distance (Volume):</strong> Closely packed when compressed &rarr; Spread far apart when expanded</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 3: REVERSE HEAT ENGINE (REFRIGERATION WITH COMPRESSOR)           -->
+    <!-- ===================================================================== -->
+    <section id="view-tab-3" class="sim-view">
+      <div class="cycle-ribbon">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span class="mode-pill mono" style="background:rgba(6,182,212,0.18);border-color:rgba(6,182,212,0.45);color:#67e8f9;font-weight:700;">
+            REVERSE HEAT ENGINE (REFRIGERATION COMPRESSOR)
+          </span>
+          <span style="font-size:12px;color:#e2e8f0;">
+            <strong style="color:#38bdf8;">Hover over any SOLID SQUARE</strong> (Compressor, Condenser, Expansion Valve, Evaporator) to turn it <strong style="color:#38bdf8;text-decoration:underline dashed;">DASHED</strong> and view its process beneath!
+          </span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;">
+          <div class="mono" style="background:#090d16;padding:4px 10px;border-radius:7px;border:1px solid #1e293b;">
+            <span style="color:#94a3b8;">COP<sub>ref</sub>: </span>
+            <span style="color:#22d3ee;font-weight:700;">3.40</span>
+            <span style="color:#475569;"> | </span>
+            <span style="color:#cbd5e1;">Q<sub>H</sub> = Q<sub>C</sub> + W<sub>in</sub></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="mono" style="color:#94a3b8;">Compressor Speed:</span>
+            <input id="refSpeedRange" type="range" min="0.2" max="2.0" step="0.05" value="0.85"
+              oninput="refrigState.speed = parseFloat(this.value)"
+              class="thermo-slider" style="width:90px;background:#334155;" />
+          </div>
+        </div>
+      </div>
+
+      <div id="refStageContainer" class="cycle-stage-wrap">
+        <canvas id="refrigCanvas" class="sim-canvas" width="1100" height="580"></canvas>
+
+        <!-- Stage 1 Square: Mechanical Compressor (Right Side - Replaces Piston Engine) -->
+        <div id="refBox-compressor" class="cycle-square-enclosure">
+          <span class="square-corner-tag">Stage 1 &bull; Mechanical Compressor</span>
+          <div class="process-popup-beneath">
+            <div class="popup-step-tag">Work Input Stage (+W<sub>in</sub>)</div>
+            <div class="popup-process-name" style="color:#fbbf24;">Adiabatic Compression</div>
+            <div class="popup-process-desc">
+              Compressor work input (+W<sub>in</sub>) squeezes low-pressure vapor into a tight volume: molecules pack closely together, speed up (high P), and turn <strong style="color:#fb7185;">hot red</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 2 Square: Condenser (Top Hot Side) -->
+        <div id="refBox-condenser" class="cycle-square-enclosure">
+          <span class="square-corner-tag">Stage 2 &bull; High-P Condenser</span>
+          <div class="process-popup-beneath">
+            <div class="popup-step-tag">Warm Surroundings (T<sub>H</sub>)</div>
+            <div class="popup-process-name">Isobaric Heat Rejection (&minus;Q<sub>H</sub>)</div>
+            <div class="popup-process-desc">
+              Hot high-pressure refrigerant releases heat Q<sub>H</sub> to the room: molecules remain closely packed and fast while cooling from red to <strong style="color:#fbbf24;">warm orange/yellow</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 3 Square: Expansion Valve (Left Side Throttling Device) -->
+        <div id="refBox-valve" class="cycle-square-enclosure">
+          <span class="square-corner-tag">Stage 3 &bull; Expansion Valve</span>
+          <div class="process-popup-beneath">
+            <div class="popup-step-tag">Throttling Choke (Isenthalpic)</div>
+            <div class="popup-process-name" style="color:#38bdf8;">Adiabatic Throttling Expansion</div>
+            <div class="popup-process-desc">
+              Fluid passes through narrow restriction: pressure drops abruptly, molecules <strong style="color:#34d399;">spread far apart</strong> (volume expands), slow down, and chill to <strong style="color:#22d3ee;">icy blue</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 4 Square: Evaporator (Bottom Cold Space) -->
+        <div id="refBox-evaporator" class="cycle-square-enclosure">
+          <span class="square-corner-tag">Stage 4 &bull; Low-P Evaporator</span>
+          <div class="process-popup-beneath">
+            <div class="popup-step-tag">Refrigerated Cold Space (T<sub>C</sub>)</div>
+            <div class="popup-process-name">Isobaric Heat Absorption (+Q<sub>C</sub>)</div>
+            <div class="popup-process-desc">
+              Cold, widely spaced, low-pressure refrigerant absorbs heat Q<sub>C</sub> from inside the refrigerator before returning to the compressor intake.
+            </div>
+          </div>
+        </div>
+
+        <div class="cycle-legend-overlay">
+          <div style="font-weight:700;color:#fff;margin-bottom:3px;">Refrigeration Loop Molecular Behavior:</div>
+          <div>&bull; <strong style="color:#fb7185;">High-Pressure Top Branch:</strong> Closely spaced molecules (low V), fast velocity (high P), Hot Red &rarr; Warm Orange</div>
+          <div>&bull; <strong style="color:#22d3ee;">Low-Pressure Bottom Branch:</strong> Widely spaced molecules (high V), slower velocity (low P), Icy Blue &rarr; Cool Cyan</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- SELF-CONTAINED PHYSICS & INTERACTIVE RENDERING ENGINE                   -->
+  <!-- ======================================================================= -->
+  <script>
+    let activeTab = 1;
+
+    function clamp(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    /**
+     * Maps normalized temperature u in [0, 1] to RGB color
+     * 0.0 -> Deep Cold Blue
+     * 0.3 -> Cyan
+     * 0.6 -> Warm Yellow
+     * 0.85 -> Orange
+     * 1.0 -> Bright Hot Red
+     */
+    function getTempRGB(normT) {
+      const t = clamp(normT, 0, 1);
+      const stops = [
+        { pos: 0.00, r: 37,  g: 99,  b: 235 },
+        { pos: 0.28, r: 6,   g: 182, b: 212 },
+        { pos: 0.56, r: 250, g: 204, b: 21  },
+        { pos: 0.82, r: 249, g: 115, b: 22  },
+        { pos: 1.00, r: 255, g: 55,  b: 55  }
+      ];
+      for (let i = 0; i < stops.length - 1; i++) {
+        if (t >= stops[i].pos && t <= stops[i + 1].pos) {
+          const local = (t - stops[i].pos) / (stops[i + 1].pos - stops[i].pos);
+          const r = Math.round(lerp(stops[i].r, stops[i + 1].r, local));
+          const g = Math.round(lerp(stops[i].g, stops[i + 1].g, local));
+          const b = Math.round(lerp(stops[i].b, stops[i + 1].b, local));
+          return { r, g, b, css: 'rgb(' + r + ',' + g + ',' + b + ')' };
+        }
+      }
+      return { r: 255, g: 55, b: 55, css: 'rgb(255,55,55)' };
+    }
+
+    function drawAtomSphere(ctx, cx, cy, r, col) {
+      const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+      grad.addColorStop(0, 'rgb(' + Math.min(255, col.r + 90) + ',' + Math.min(255, col.g + 90) + ',' + Math.min(255, col.b + 90) + ')');
+      grad.addColorStop(0.55, col.css);
+      grad.addColorStop(1, 'rgb(' + Math.max(0, col.r - 65) + ',' + Math.max(0, col.g - 65) + ',' + Math.max(0, col.b - 65) + ')');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    /**
+     * Draws a gas molecule according to atomicity ('mono', 'dia', 'poly')
+     */
+    function drawGasMolecule(ctx, x, y, radius, normTemp, gasType, angle) {
+      const col = getTempRGB(normTemp);
+      ctx.save();
+      ctx.translate(x, y);
+
+      if (gasType === 'mono') {
+        drawAtomSphere(ctx, 0, 0, radius, col);
+      } else if (gasType === 'dia') {
+        ctx.rotate(angle);
+        const sep = radius * 0.92;
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.8)';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(-sep, 0);
+        ctx.lineTo(sep, 0);
+        ctx.stroke();
+        drawAtomSphere(ctx, -sep, 0, radius * 0.76, col);
+        drawAtomSphere(ctx, sep, 0, radius * 0.76, col);
+      } else {
+        ctx.rotate(angle);
+        const d = radius * 1.02;
+        const p1 = { x: 0, y: -d * 0.82 };
+        const p2 = { x: -d * 0.88, y: d * 0.62 };
+        const p3 = { x: d * 0.88, y: d * 0.62 };
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(p2.x, p2.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.stroke();
+        drawAtomSphere(ctx, p2.x, p2.y, radius * 0.66, col);
+        drawAtomSphere(ctx, p3.x, p3.y, radius * 0.66, col);
+        drawAtomSphere(ctx, p1.x, p1.y, radius * 0.76, col);
+      }
+      ctx.restore();
+    }
+
+    function drawLabGrid(ctx, W, H) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.45)';
+      ctx.lineWidth = 1;
+      const step = 36;
+      for (let x = 0; x < W; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 0; y < H; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /*************************************************************************
+     * TAB NAVIGATION CONTROLLER (REPLACES ACTIVE SIMULATION CLEANLY)
+     *************************************************************************/
+    function switchTab(tabIndex) {
+      activeTab = tabIndex;
+      for (let i = 1; i <= 3; i++) {
+        const view = document.getElementById('view-tab-' + i);
+        const btn = document.getElementById('tabBtn-' + i);
+        view.classList.remove('active-grid', 'active-flex');
+        btn.classList.remove('active');
+        if (i === tabIndex) {
+          btn.classList.add('active');
+          if (i === 1) {
+            view.classList.add('active-grid');
+          } else {
+            view.classList.add('active-flex');
+          }
+        }
+      }
+      handleResizeAll();
+    }
+
+    /*************************************************************************
+     * TAB 1: FIRST LAW OF THERMODYNAMICS (CROSS-SECTIONAL PISTON + TRACE)
+     *************************************************************************/
+    const R_GAS = 8.314;
+    const GAS_CONFIGS = {
+      mono: { name: 'Monoatomic', dof: 3, gamma: 5 / 3, molarMass: 0.004, subtext: 'Single-atom spheres (He/Ar) | Cv = 1.5R | \u03B3 = 1.67' },
+      dia:  { name: 'Diatomic',   dof: 5, gamma: 7 / 5, molarMass: 0.028, subtext: 'Bonded diatomic pairs (N\u2082/O\u2082) | Cv = 2.5R | \u03B3 = 1.40' },
+      poly: { name: 'Polyatomic', dof: 6, gamma: 4 / 3, molarMass: 0.044, subtext: 'Triatomic molecules (CO\u2082) | Cv = 3.0R | \u03B3 = 1.33' }
+    };
+
+    const tab1State = {
+      n: 1.0,
+      gasType: 'mono',
+      P: 100.0,
+      V: 24.94,
+      T: 300.0,
+      initialV: 24.94,
+      minV: 8.0,
+      maxV: 50.0,
+      minT: 90.0,
+      maxT: 1150.0,
+      deltaU: 0,
+      heatQ: 0,
+      workW: 0,
+      holdP: false,
+      holdV: false,
+      holdT: false,
+      autoMode: false,
+      autoPhase: 0,
+      isDraggingPiston: false,
+      hoveringPiston: false,
+      dragOffsetY: 0,
+      pistonVelocityY: 0,
+      thermalPower: 0,
+      buttonHeatRate: 0,
+      displacementTrace: [], // Stores vertical piston positions for left-side trace line
+      pvTrail: [],
+      molecules: []
+    };
+
+    const pistonCanvas = document.getElementById('pistonCanvas');
+    const pCtx = pistonCanvas.getContext('2d');
+
+    const cylGeom = {
+      cx: 480,
+      topY: 75,
+      bottomY: 465,
+      innerWidth: 230,
+      wallThickness: 14,
+      pistonThickness: 34,
+      get innerLeft() { return this.cx - this.innerWidth / 2; },
+      get innerRight() { return this.cx + this.innerWidth / 2; },
+      get maxChamberHeight() { return this.bottomY - this.topY - this.pistonThickness - 16; },
+      volumeToPistonBottomY(V) {
+        const frac = clamp((V - tab1State.minV) / (tab1State.maxV - tab1State.minV), 0.04, 1.0);
+        const minH = 46;
+        const h = minH + frac * (this.maxChamberHeight - minH);
+        return this.bottomY - h;
+      },
+      pistonBottomYToVolume(py) {
+        const minH = 46;
+        const h = clamp(this.bottomY - py, minH, this.maxChamberHeight);
+        const frac = (h - minH) / (this.maxChamberHeight - minH);
+        return tab1State.minV + frac * (tab1State.maxV - tab1State.minV);
+      }
+    };
+
+    function initTab1Molecules() {
+      tab1State.molecules = [];
+      const count = 60;
+      const pistonY = cylGeom.volumeToPistonBottomY(tab1State.V);
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        tab1State.molecules.push({
+          x: cylGeom.innerLeft + 16 + Math.random() * (cylGeom.innerWidth - 32),
+          y: pistonY + 16 + Math.random() * (cylGeom.bottomY - pistonY - 32),
+          vx: Math.cos(angle),
+          vy: Math.sin(angle),
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 0.09,
+          speedFactor: 0.8 + Math.random() * 0.45
+        });
+      }
+      clearDisplacementTrace();
+      recordPVPoint();
+    }
+
+    function clearDisplacementTrace() {
+      const y0 = cylGeom.volumeToPistonBottomY(tab1State.V) - cylGeom.pistonThickness / 2;
+      tab1State.displacementTrace = [y0];
+    }
+
+    function recordPVPoint() {
+      const trail = tab1State.pvTrail;
+      if (trail.length === 0 ||
+          Math.abs(trail[trail.length - 1].V - tab1State.V) > 0.25 ||
+          Math.abs(trail[trail.length - 1].P - tab1State.P) > 1.5) {
+        trail.push({ V: tab1State.V, P: tab1State.P, T: tab1State.T });
+        if (trail.length > 90) trail.shift();
+      }
+    }
+
+    function getCv() {
+      return 0.5 * GAS_CONFIGS[tab1State.gasType].dof * R_GAS;
+    }
+
+    function getCp() {
+      return getCv() + R_GAS;
+    }
+
+    function getGamma() {
+      return GAS_CONFIGS[tab1State.gasType].gamma;
+    }
+
+    function applyPistonVolumeChange(newV) {
+      if (tab1State.holdV) return;
+      if (tab1State.holdP && tab1State.holdT) return;
+
+      const V1 = tab1State.V;
+      const V2 = clamp(newV, tab1State.minV, tab1State.maxV);
+      if (Math.abs(V2 - V1) < 1e-5) return;
+
+      const T1 = tab1State.T;
+      const Cv = getCv();
+      const gamma = getGamma();
+
+      if (tab1State.holdT) {
+        tab1State.V = V2;
+        tab1State.P = (tab1State.n * R_GAS * tab1State.T) / tab1State.V;
+        const dW = tab1State.n * R_GAS * tab1State.T * Math.log(V2 / V1);
+        tab1State.workW += dW;
+        tab1State.heatQ += dW;
+      } else if (tab1State.holdP) {
+        const T2 = clamp((tab1State.P * V2) / (tab1State.n * R_GAS), tab1State.minT, tab1State.maxT);
+        const actualV2 = (tab1State.n * R_GAS * T2) / tab1State.P;
+        const dW = tab1State.P * (actualV2 - V1);
+        const dU = tab1State.n * Cv * (T2 - T1);
+        const dQ = dU + dW;
+        tab1State.V = actualV2;
+        tab1State.T = T2;
+        tab1State.workW += dW;
+        tab1State.deltaU += dU;
+        tab1State.heatQ += dQ;
+      } else {
+        const rawT2 = T1 * Math.pow(V1 / V2, gamma - 1);
+        const T2 = clamp(rawT2, tab1State.minT, tab1State.maxT);
+        tab1State.V = V2;
+        tab1State.T = T2;
+        tab1State.P = (tab1State.n * R_GAS * tab1State.T) / tab1State.V;
+        const dU = tab1State.n * Cv * (T2 - T1);
+        const dW = -dU;
+        tab1State.deltaU += dU;
+        tab1State.workW += dW;
+      }
+
+      recordPVPoint();
+      updateTab1UI();
+    }
+
+    function applyThermalHeat(dQ_Joules) {
+      if (Math.abs(dQ_Joules) < 1e-4) return;
+      const locksCount = (tab1State.holdP ? 1 : 0) + (tab1State.holdV ? 1 : 0) + (tab1State.holdT ? 1 : 0);
+      if (locksCount >= 2) return;
+
+      const Cv = getCv();
+      const Cp = getCp();
+      const T1 = tab1State.T;
+      const V1 = tab1State.V;
+
+      if (tab1State.holdP) {
+        const dT = dQ_Joules / (tab1State.n * Cp);
+        const T2 = clamp(T1 + dT, tab1State.minT, tab1State.maxT);
+        const V2 = clamp((tab1State.n * R_GAS * T2) / tab1State.P, tab1State.minV, tab1State.maxV);
+        const actualT2 = (tab1State.P * V2) / (tab1State.n * R_GAS);
+        const actual_dU = tab1State.n * Cv * (actualT2 - T1);
+        const actual_dW = tab1State.P * (V2 - V1);
+        const actual_dQ = actual_dU + actual_dW;
+        tab1State.T = actualT2;
+        tab1State.V = V2;
+        tab1State.P = (tab1State.n * R_GAS * tab1State.T) / tab1State.V;
+        tab1State.deltaU += actual_dU;
+        tab1State.workW += actual_dW;
+        tab1State.heatQ += actual_dQ;
+      } else if (tab1State.holdT) {
+        const factor = Math.exp(dQ_Joules / (tab1State.n * R_GAS * T1));
+        const V2 = clamp(V1 * factor, tab1State.minV, tab1State.maxV);
+        const actual_dW = tab1State.n * R_GAS * T1 * Math.log(V2 / V1);
+        tab1State.V = V2;
+        tab1State.P = (tab1State.n * R_GAS * tab1State.T) / tab1State.V;
+        tab1State.workW += actual_dW;
+        tab1State.heatQ += actual_dW;
+      } else {
+        const dT = dQ_Joules / (tab1State.n * Cv);
+        const T2 = clamp(T1 + dT, tab1State.minT, tab1State.maxT);
+        const actual_dU = tab1State.n * Cv * (T2 - T1);
+        tab1State.T = T2;
+        tab1State.P = (tab1State.n * R_GAS * tab1State.T) / tab1State.V;
+        tab1State.deltaU += actual_dU;
+        tab1State.heatQ += actual_dU;
+      }
+
+      recordPVPoint();
+      updateTab1UI();
+    }
+
+    function handleGasTypeChange(newType) {
+      tab1State.gasType = newType;
+      document.getElementById('gasInfoSubtext').innerHTML = '<span>' + GAS_CONFIGS[newType].subtext + '</span>';
+      updateTab1UI();
+    }
+
+    function handleConstraintToggle() {
+      tab1State.holdP = document.getElementById('toggleConstP').checked;
+      tab1State.holdV = document.getElementById('toggleConstV').checked;
+      tab1State.holdT = document.getElementById('toggleConstT').checked;
+
+      document.getElementById('lockIconP').style.display = tab1State.holdP ? 'inline' : 'none';
+      document.getElementById('lockIconV').style.display = tab1State.holdV ? 'inline' : 'none';
+      document.getElementById('lockIconT').style.display = tab1State.holdT ? 'inline' : 'none';
+
+      const hintBox = document.getElementById('constraintHintBox');
+      const badge = document.getElementById('processBadgeTab1');
+      const count = (tab1State.holdP ? 1 : 0) + (tab1State.holdV ? 1 : 0) + (tab1State.holdT ? 1 : 0);
+
+      if (count >= 2) {
+        badge.textContent = 'STATE LOCKED (PV=nRT)';
+        hintBox.innerHTML = '<strong style="color:#fbbf24;">State Locked:</strong> Holding 2+ variables constant fixes the 3rd by <span class="mono">PV = nRT</span>. Uncheck one to allow motion.';
+      } else if (tab1State.holdP) {
+        badge.textContent = 'ISOBARIC (P = CONST)';
+        hintBox.innerHTML = '<strong style="color:#38bdf8;">Isobaric Mode:</strong> Pressure held constant at <span class="mono">' + tab1State.P.toFixed(1) + ' kPa</span>. Heating/cooling moves the piston (<span class="mono">V &prop; T</span>).';
+      } else if (tab1State.holdV) {
+        badge.textContent = 'ISOCHORIC (V = CONST)';
+        hintBox.innerHTML = '<strong style="color:#38bdf8;">Isochoric Mode:</strong> Piston locked (<span class="mono">W = 0</span>). Add or remove heat to change Pressure &amp; Temp (<span class="mono">&Delta;U = Q</span>).';
+      } else if (tab1State.holdT) {
+        badge.textContent = 'ISOTHERMAL (T = CONST)';
+        hintBox.innerHTML = '<strong style="color:#38bdf8;">Isothermal Mode:</strong> Temp held constant at <span class="mono">' + Math.round(tab1State.T) + ' K</span> (<span class="mono">&Delta;U = 0</span>). Moving piston varies <span class="mono">P &prop; 1/V</span>.';
+      } else {
+        badge.textContent = 'ADIABATIC (FREE)';
+        hintBox.innerHTML = '<strong style="color:#38bdf8;">Adiabatic / Free Mode:</strong> All switches off. Dragging the piston follows <span class="mono">PV<sup>&gamma;</sup> = const</span>.';
+      }
+    }
+
+    function handleAutoModeToggle(isAuto) {
+      tab1State.autoMode = isAuto;
+      const titleEl = document.getElementById('simModeTitle');
+      const descEl = document.getElementById('simModeDesc');
+      if (isAuto) {
+        titleEl.textContent = 'Automatic Simulation Mode';
+        titleEl.style.color = '#fbbf24';
+        descEl.textContent = 'Automatically oscillating piston & tracing displacement wave';
+      } else {
+        titleEl.textContent = 'Manual Simulation Mode';
+        titleEl.style.color = '#e2e8f0';
+        descEl.textContent = 'Drag piston up/down or use thermal burner';
+        tab1State.thermalPower = 0;
+        document.getElementById('thermalSlider').value = 0;
+        document.getElementById('thermalRateLabel').textContent = '0 W';
+      }
+    }
+
+    function resetTab1EnergyCounters() {
+      tab1State.deltaU = 0;
+      tab1State.heatQ = 0;
+      tab1State.workW = 0;
+      tab1State.pvTrail = [{ V: tab1State.V, P: tab1State.P, T: tab1State.T }];
+      updateTab1UI();
+    }
+
+    function resetTab1State() {
+      tab1State.T = 300.0;
+      tab1State.V = 24.94;
+      tab1State.P = (tab1State.n * R_GAS * tab1State.T) / tab1State.V;
+      tab1State.thermalPower = 0;
+      document.getElementById('thermalSlider').value = 0;
+      document.getElementById('thermalRateLabel').textContent = '0 W';
+      clearDisplacementTrace();
+      resetTab1EnergyCounters();
+    }
+
+    function updateTab1UI() {
+      document.getElementById('statPressure').textContent = tab1State.P.toFixed(1);
+      document.getElementById('statVolume').textContent = tab1State.V.toFixed(1);
+      document.getElementById('statTemp').textContent = Math.round(tab1State.T);
+
+      document.getElementById('statDeltaU').textContent = (tab1State.deltaU / 1000).toFixed(2) + ' kJ';
+      document.getElementById('statHeatQ').textContent = (tab1State.heatQ / 1000).toFixed(2) + ' kJ';
+      document.getElementById('statWorkW').textContent = (tab1State.workW / 1000).toFixed(2) + ' kJ';
+
+      const cfg = GAS_CONFIGS[tab1State.gasType];
+      const vrms = Math.sqrt((3 * R_GAS * tab1State.T) / cfg.molarMass);
+      document.getElementById('statVrms').textContent = Math.round(vrms) + ' m/s';
+
+      const deltaY_cm = (tab1State.V - tab1State.initialV) * 0.45;
+      const sign = deltaY_cm >= 0 ? '+' : '';
+      document.getElementById('dispDeltaYHeader').textContent = '\u0394y: ' + sign + deltaY_cm.toFixed(1) + ' cm';
+    }
+
+    function setupTab1Events() {
+      const slider = document.getElementById('thermalSlider');
+      slider.addEventListener('input', function(e) {
+        tab1State.thermalPower = parseFloat(e.target.value);
+        const w = Math.round(tab1State.thermalPower * 15);
+        document.getElementById('thermalRateLabel').textContent = (w > 0 ? '+' + w + ' W' : w + ' W');
+      });
+      slider.addEventListener('change', function() {
+        if (!tab1State.autoMode) {
+          tab1State.thermalPower = 0;
+          slider.value = 0;
+          document.getElementById('thermalRateLabel').textContent = '0 W';
+        }
+      });
+
+      const btnHeat = document.getElementById('btnHeatHold');
+      const btnCool = document.getElementById('btnCoolHold');
+      const startHeat = function() { tab1State.buttonHeatRate = 85; };
+      const startCool = function() { tab1State.buttonHeatRate = -85; };
+      const stopBtn = function() { tab1State.buttonHeatRate = 0; };
+
+      btnHeat.addEventListener('mousedown', startHeat);
+      btnHeat.addEventListener('touchstart', function(e) { e.preventDefault(); startHeat(); });
+      btnCool.addEventListener('mousedown', startCool);
+      btnCool.addEventListener('touchstart', function(e) { e.preventDefault(); startCool(); });
+      window.addEventListener('mouseup', stopBtn);
+      window.addEventListener('touchend', stopBtn);
+
+      function getCanvasCoords(evt) {
+        const rect = pistonCanvas.getBoundingClientRect();
+        const scaleX = pistonCanvas.width / Math.max(1, rect.width);
+        const scaleY = pistonCanvas.height / Math.max(1, rect.height);
+        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY
+        };
+      }
+
+      function isOverPiston(pos) {
+        const pistonBottomY = cylGeom.volumeToPistonBottomY(tab1State.V);
+        const pistonTopY = pistonBottomY - cylGeom.pistonThickness;
+        return pos.x >= cylGeom.innerLeft - 45 && pos.x <= cylGeom.innerRight + 15 &&
+               pos.y >= pistonTopY - 85 && pos.y <= pistonBottomY + 14;
+      }
+
+      pistonCanvas.addEventListener('mousedown', function(evt) {
+        if (tab1State.autoMode) return;
+        const pos = getCanvasCoords(evt);
+        if (isOverPiston(pos)) {
+          if (tab1State.holdV || (tab1State.holdP && tab1State.holdT)) return;
+          tab1State.isDraggingPiston = true;
+          const pistonBottomY = cylGeom.volumeToPistonBottomY(tab1State.V);
+          tab1State.dragOffsetY = pos.y - pistonBottomY;
+        }
+      });
+
+      pistonCanvas.addEventListener('mousemove', function(evt) {
+        const pos = getCanvasCoords(evt);
+        if (tab1State.isDraggingPiston && !tab1State.autoMode) {
+          const prevY = cylGeom.volumeToPistonBottomY(tab1State.V);
+          const targetBottomY = pos.y - tab1State.dragOffsetY;
+          const newV = cylGeom.pistonBottomYToVolume(targetBottomY);
+          applyPistonVolumeChange(newV);
+          const nowY = cylGeom.volumeToPistonBottomY(tab1State.V);
+          tab1State.pistonVelocityY = nowY - prevY;
+        } else {
+          tab1State.hoveringPiston = isOverPiston(pos);
+          if (tab1State.hoveringPiston && !tab1State.autoMode) {
+            pistonCanvas.style.cursor = (tab1State.holdV || (tab1State.holdP && tab1State.holdT)) ? 'not-allowed' : 'ns-resize';
+          } else {
+            pistonCanvas.style.cursor = 'default';
+          }
+        }
+      });
+
+      window.addEventListener('mouseup', function() {
+        tab1State.isDraggingPiston = false;
+        tab1State.pistonVelocityY = 0;
+      });
+
+      pistonCanvas.addEventListener('touchstart', function(evt) {
+        if (tab1State.autoMode) return;
+        const pos = getCanvasCoords(evt);
+        if (isOverPiston(pos)) {
+          if (tab1State.holdV || (tab1State.holdP && tab1State.holdT)) return;
+          evt.preventDefault();
+          tab1State.isDraggingPiston = true;
+          const pistonBottomY = cylGeom.volumeToPistonBottomY(tab1State.V);
+          tab1State.dragOffsetY = pos.y - pistonBottomY;
+        }
+      }, { passive: false });
+
+      pistonCanvas.addEventListener('touchmove', function(evt) {
+        if (!tab1State.isDraggingPiston || tab1State.autoMode) return;
+        evt.preventDefault();
+        const pos = getCanvasCoords(evt);
+        const prevY = cylGeom.volumeToPistonBottomY(tab1State.V);
+        const targetBottomY = pos.y - tab1State.dragOffsetY;
+        const newV = cylGeom.pistonBottomYToVolume(targetBottomY);
+        applyPistonVolumeChange(newV);
+        const nowY = cylGeom.volumeToPistonBottomY(tab1State.V);
+        tab1State.pistonVelocityY = nowY - prevY;
+      }, { passive: false });
+
+      window.addEventListener('touchend', function() {
+        tab1State.isDraggingPiston = false;
+        tab1State.pistonVelocityY = 0;
+      });
+    }
+
+    /**
+     * Renders View 1:
+     * - Left Outside Vertical Displacement Point & Scrolling Trace Line
+     * - Center Cross-Sectional Piston-Cylinder + Bouncing Gas Molecules
+     * - Right Mini P-V Diagram
+     */
+    function updateAndDrawTab1() {
+      const W = pistonCanvas.width;
+      const H = pistonCanvas.height;
+      pCtx.clearRect(0, 0, W, H);
+      drawLabGrid(pCtx, W, H);
+
+      cylGeom.cx = Math.round(W * 0.54);
+      cylGeom.innerWidth = clamp(Math.round(W * 0.26), 200, 250);
+      cylGeom.topY = 78;
+      cylGeom.bottomY = H - 85;
+
+      // 1. Update Automatic or Manual Physics
+      if (tab1State.autoMode) {
+        tab1State.autoPhase += 0.032;
+        const locksCount = (tab1State.holdP ? 1 : 0) + (tab1State.holdV ? 1 : 0) + (tab1State.holdT ? 1 : 0);
+        if (locksCount < 2) {
+          if (tab1State.holdV || tab1State.holdP) {
+            const wave = Math.sin(tab1State.autoPhase);
+            tab1State.thermalPower = wave * 85;
+            document.getElementById('thermalSlider').value = Math.round(tab1State.thermalPower);
+            const w = Math.round(tab1State.thermalPower * 15);
+            document.getElementById('thermalRateLabel').textContent = (w > 0 ? '+' + w + ' W' : w + ' W');
+            applyThermalHeat(wave * 26);
+          } else {
+            const prevY = cylGeom.volumeToPistonBottomY(tab1State.V);
+            const targetV = 26.5 + Math.sin(tab1State.autoPhase) * 14.5;
+            applyPistonVolumeChange(targetV);
+            const nowY = cylGeom.volumeToPistonBottomY(tab1State.V);
+            tab1State.pistonVelocityY = nowY - prevY;
+          }
+        }
+      } else {
+        const netPower = tab1State.thermalPower + tab1State.buttonHeatRate;
+        if (Math.abs(netPower) > 0.1) {
+          applyThermalHeat(netPower * 0.34);
+        }
+      }
+
+      const pistonBottomY = cylGeom.volumeToPistonBottomY(tab1State.V);
+      const pistonTopY = pistonBottomY - cylGeom.pistonThickness;
+      const pistonCenterY = (pistonTopY + pistonBottomY) / 2;
+
+      // Record current vertical piston position into the left-side trace array
+      tab1State.displacementTrace.unshift(pistonCenterY);
+      if (tab1State.displacementTrace.length > 240) {
+        tab1State.displacementTrace.pop();
+      }
+
+      const normTemp = clamp((tab1State.T - tab1State.minT) / (tab1State.maxT - tab1State.minT), 0, 1);
+      const tempCol = getTempRGB(normTemp);
+
+      // 2. Chamber Background Thermal Glow
+      const chamberGrad = pCtx.createLinearGradient(0, pistonBottomY, 0, cylGeom.bottomY);
+      chamberGrad.addColorStop(0, 'rgba(' + tempCol.r + ',' + tempCol.g + ',' + tempCol.b + ',0.08)');
+      chamberGrad.addColorStop(1, 'rgba(' + tempCol.r + ',' + tempCol.g + ',' + tempCol.b + ',0.22)');
+      pCtx.fillStyle = chamberGrad;
+      pCtx.fillRect(cylGeom.innerLeft, pistonBottomY, cylGeom.innerWidth, cylGeom.bottomY - pistonBottomY);
+
+      // 3. Update & Draw Gas Molecules Inside Cylinder
+      const baseSpeed = 1.6 + 6.8 * Math.sqrt(clamp(tab1State.T / 300, 0.2, 4.2));
+      const molRadius = 7.0;
+      const leftBound = cylGeom.innerLeft + molRadius + 2;
+      const rightBound = cylGeom.innerRight - molRadius - 2;
+      const topBound = pistonBottomY + molRadius + 2;
+      const botBound = cylGeom.bottomY - molRadius - 2;
+
+      for (let i = 0; i < tab1State.molecules.length; i++) {
+        const m = tab1State.molecules[i];
+        const spd = baseSpeed * m.speedFactor;
+        m.x += m.vx * spd;
+        m.y += m.vy * spd;
+        m.rot += m.vRot * (spd * 0.35);
+
+        if (m.x < leftBound) { m.x = leftBound; m.vx = Math.abs(m.vx); }
+        else if (m.x > rightBound) { m.x = rightBound; m.vx = -Math.abs(m.vx); }
+
+        if (m.y < topBound) {
+          m.y = topBound;
+          m.vy = Math.abs(m.vy) + Math.max(0, tab1State.pistonVelocityY * 0.25);
+          const mag = Math.hypot(m.vx, m.vy) || 1;
+          m.vx /= mag;
+          m.vy /= mag;
+        } else if (m.y > botBound) {
+          m.y = botBound;
+          m.vy = -Math.abs(m.vy);
+        }
+
+        drawGasMolecule(pCtx, m.x, m.y, molRadius, normTemp, tab1State.gasType, m.rot);
+      }
+
+      // 4. Draw Cross-Sectional Cylinder Walls & Volume Ruler
+      drawCrossSectionCylinderWalls(pCtx);
+
+      // 5. Draw Piston Head, Rod, Drag Handle
+      drawCrossSectionPiston(pCtx, pistonTopY, pistonBottomY);
+
+      // 6. Draw Outside-Left Piston Point & Vertical Displacement Trace Line
+      drawLeftPistonDisplacementTrace(pCtx, pistonCenterY);
+
+      // 7. Draw Base Thermal Burner / Chiller
+      drawThermalBaseEffect(pCtx);
+
+      // 8. Draw Live Mini P-V Diagram on Right of Cylinder
+      const pvX = cylGeom.innerRight + 52;
+      if (pvX + 185 < W) {
+        drawMiniPVDiagram(pCtx, pvX, cylGeom.topY + 10, Math.min(210, W - pvX - 14), 185);
+      }
+    }
+
+    /**
+     * Draws the Point on the Left Side of the Piston (Outside Cylinder)
+     * and traces a continuous line showing the vertical displacement of the piston.
+     */
+    function drawLeftPistonDisplacementTrace(ctx, pistonCenterY) {
+      ctx.save();
+      const leftWallOuterX = cylGeom.innerLeft - cylGeom.wallThickness;
+      const pointX = leftWallOuterX - 38; // Point outside left side of cylinder
+      const traceLeftX = 24;
+      const traceBoxW = pointX - traceLeftX;
+      const eqY = cylGeom.volumeToPistonBottomY(tab1State.initialV) - cylGeom.pistonThickness / 2;
+
+      // Background Trace Strip Panel
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+      ctx.strokeStyle = 'rgba(51, 65, 85, 0.85)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(traceLeftX, cylGeom.topY, traceBoxW + 18, cylGeom.bottomY - cylGeom.topY, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      // Header inside Trace Zone
+      ctx.fillStyle = '#34d399';
+      ctx.font = 'bold 11px ui-monospace, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('PISTON VERTICAL TRACE (\u0394y)', traceLeftX + 10, cylGeom.topY + 18);
+
+      // Equilibrium Reference Dashed Line (y0)
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(traceLeftX + 6, eqY);
+      ctx.lineTo(pointX + 8, eqY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillText('y\u2080 (0 cm)', traceLeftX + 10, eqY - 5);
+
+      // Vertical Displacement Guide Track under Point X
+      ctx.strokeStyle = 'rgba(52, 211, 153, 0.28)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pointX, cylGeom.topY + 28);
+      ctx.lineTo(pointX, cylGeom.bottomY - 12);
+      ctx.stroke();
+
+      // Highlighted Vertical Displacement Segment between y0 and current pistonCenterY
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(pointX, eqY);
+      ctx.lineTo(pointX, pistonCenterY);
+      ctx.stroke();
+
+      // Scrolling Waveform Line Traced by the Point (moving right-to-left)
+      const trace = tab1State.displacementTrace;
+      if (trace.length > 1) {
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        const stepX = (traceBoxW - 14) / 220;
+        for (let i = 0; i < trace.length; i++) {
+          const tx = pointX - i * stepX;
+          const ty = clamp(trace[i], cylGeom.topY + 26, cylGeom.bottomY - 8);
+          if (tx < traceLeftX + 6) break;
+          if (i === 0) ctx.moveTo(tx, ty);
+          else ctx.lineTo(tx, ty);
+        }
+        ctx.stroke();
+      }
+
+      // Horizontal Pointer Arm connecting Piston Head (through left wall) to the Outside Point
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(cylGeom.innerLeft + 2, pistonCenterY);
+      ctx.lineTo(pointX, pistonCenterY);
+      ctx.stroke();
+
+      // Glowing Point on the Left Side of the Piston (Outside Cylinder)
+      ctx.shadowColor = '#34d399';
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(pointX, pistonCenterY, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ecfdf5';
+      ctx.beginPath();
+      ctx.arc(pointX, pistonCenterY, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Live Displacement Value Readout next to the Point
+      const deltaY_cm = (tab1State.V - tab1State.initialV) * 0.45;
+      const sign = deltaY_cm >= 0 ? '+' : '';
+      ctx.fillStyle = '#6ee7b7';
+      ctx.font = 'bold 11px ui-monospace, monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('\u0394y = ' + sign + deltaY_cm.toFixed(1) + ' cm', pointX - 10, pistonCenterY - 10);
+
+      ctx.restore();
+    }
+
+    function drawCrossSectionPiston(ctx, pistonTopY, pistonBottomY) {
+      ctx.save();
+      const left = cylGeom.innerLeft;
+      const width = cylGeom.innerWidth;
+      const rodWidth = 26;
+      const handleWidth = 132;
+      const handleY = Math.max(18, pistonTopY - 64);
+
+      // Piston Rod
+      const rodGrad = ctx.createLinearGradient(cylGeom.cx - rodWidth / 2, 0, cylGeom.cx + rodWidth / 2, 0);
+      rodGrad.addColorStop(0, '#475569');
+      rodGrad.addColorStop(0.5, '#cbd5e1');
+      rodGrad.addColorStop(1, '#334155');
+      ctx.fillStyle = rodGrad;
+      ctx.fillRect(cylGeom.cx - rodWidth / 2, handleY + 20, rodWidth, pistonTopY - (handleY + 20));
+
+      // Draggable T-Handle
+      const isHighlighted = tab1State.hoveringPiston || tab1State.isDraggingPiston;
+      ctx.fillStyle = isHighlighted ? '#0284c7' : '#1e293b';
+      ctx.strokeStyle = isHighlighted ? '#7dd3fc' : '#64748b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(cylGeom.cx - handleWidth / 2, handleY, handleWidth, 24, 7);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(tab1State.holdV ? 'VOLUME LOCKED' : '\u21C5 DRAG PISTON', cylGeom.cx, handleY + 16);
+
+      // Metallic Piston Block
+      const headGrad = ctx.createLinearGradient(left, 0, left + width, 0);
+      headGrad.addColorStop(0, '#334155');
+      headGrad.addColorStop(0.25, '#94a3b8');
+      headGrad.addColorStop(0.5, '#e2e8f0');
+      headGrad.addColorStop(0.75, '#94a3b8');
+      headGrad.addColorStop(1, '#334155');
+      ctx.fillStyle = headGrad;
+      ctx.strokeStyle = isHighlighted ? '#38bdf8' : '#475569';
+      ctx.lineWidth = 2;
+      ctx.fillRect(left + 1, pistonTopY, width - 2, cylGeom.pistonThickness);
+      ctx.strokeRect(left + 1, pistonTopY, width - 2, cylGeom.pistonThickness);
+
+      // Compression Rings
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(left + 1, pistonTopY + 8, width - 2, 4);
+      ctx.fillRect(left + 1, pistonTopY + 20, width - 2, 4);
+
+      if (tab1State.holdV) {
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(left - 14, pistonTopY + 6, 26, 10);
+        ctx.fillRect(cylGeom.innerRight - 12, pistonTopY + 6, 26, 10);
+      }
+      ctx.restore();
+    }
+
+    function drawCrossSectionCylinderWalls(ctx) {
+      ctx.save();
+      const w = cylGeom.wallThickness;
+      const leftWallX = cylGeom.innerLeft - w;
+      const rightWallX = cylGeom.innerRight;
+      const topY = cylGeom.topY;
+      const botY = cylGeom.bottomY;
+
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2;
+
+      // Left Cylinder Wall
+      ctx.fillRect(leftWallX, topY, w, botY - topY + w);
+      ctx.strokeRect(leftWallX, topY, w, botY - topY + w);
+
+      // Right Cylinder Wall
+      ctx.fillRect(rightWallX, topY, w, botY - topY + w);
+      ctx.strokeRect(rightWallX, topY, w, botY - topY + w);
+
+      // Bottom Cylinder Base
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(leftWallX, botY, cylGeom.innerWidth + w * 2, w);
+      ctx.strokeRect(leftWallX, botY, cylGeom.innerWidth + w * 2, w);
+
+      // Volume Tick Marks along Right Wall
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'left';
+      const ticks = [10, 20, 30, 40, 50];
+      for (let i = 0; i < ticks.length; i++) {
+        const vTick = ticks[i];
+        const y = cylGeom.volumeToPistonBottomY(vTick);
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(rightWallX + w, y);
+        ctx.lineTo(rightWallX + w + 8, y);
+        ctx.stroke();
+        ctx.fillText(vTick + ' L', rightWallX + w + 12, y + 3);
+      }
+      ctx.restore();
+    }
+
+    function drawThermalBaseEffect(ctx) {
+      const netPower = tab1State.thermalPower + tab1State.buttonHeatRate;
+      const baseTop = cylGeom.bottomY + cylGeom.wallThickness;
+      const left = cylGeom.innerLeft;
+      const width = cylGeom.innerWidth;
+
+      ctx.save();
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(left + 16, baseTop + 12, width - 32, 22, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      if (Math.abs(netPower) > 1) {
+        const intensity = clamp(Math.abs(netPower) / 100, 0.15, 1.0);
+        const isHeating = netPower > 0;
+        const nozzleCount = 7;
+        const spacing = (width - 56) / (nozzleCount - 1);
+        const time = performance.now() * 0.01;
+
+        for (let i = 0; i < nozzleCount; i++) {
+          const nx = left + 28 + i * spacing;
+          const flicker = Math.sin(time + i * 1.7) * 3.5;
+          if (isHeating) {
+            const flameH = 12 + intensity * 12 + flicker;
+            const grad = ctx.createLinearGradient(nx, baseTop + 12, nx, baseTop + 12 - flameH);
+            grad.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
+            grad.addColorStop(0.4, 'rgba(251, 146, 60, 0.95)');
+            grad.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(nx - 8, baseTop + 12);
+            ctx.quadraticCurveTo(nx, baseTop + 12 - flameH * 1.3, nx + 8, baseTop + 12);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = 'rgba(34, 211, 238, 0.75)';
+            ctx.beginPath();
+            ctx.arc(nx, baseTop + 5, 6 * intensity + 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 10px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        netPower > 1 ? 'ADDING HEAT (+Q)' : netPower < -1 ? 'REMOVING HEAT (-Q)' : 'THERMAL RESERVOIR BASE',
+        cylGeom.cx,
+        baseTop + 27
+      );
+      ctx.restore();
+    }
+
+    function drawMiniPVDiagram(ctx, x, y, w, h) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('Live P\u2013V Diagram', x + 12, y + 18);
+
+      const padL = 32, padR = 12, padT = 28, padB = 24;
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+      const ox = x + padL;
+      const oy = y + padT + plotH;
+
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(ox, y + padT);
+      ctx.lineTo(ox, oy);
+      ctx.lineTo(ox + plotW, oy);
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '9px ui-monospace, monospace';
+      ctx.fillText('P', x + 10, y + padT + 8);
+      ctx.fillText('V (L)', ox + plotW - 26, oy + 14);
+
+      const mapV = function(v) { return ox + clamp((v - tab1State.minV) / (tab1State.maxV - tab1State.minV), 0, 1) * plotW; };
+      const mapP = function(p) { return oy - clamp(p / 600, 0, 1) * plotH; };
+
+      if (tab1State.pvTrail.length > 1) {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < tab1State.pvTrail.length; i++) {
+          const pt = tab1State.pvTrail[i];
+          const px = mapV(pt.V);
+          const py = mapP(pt.P);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(mapV(tab1State.V), mapP(tab1State.P), 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /*************************************************************************
+     * TAB 2: HEAT ENGINE (CLOSED PIPE LOOP + PISTON ENGINE)
+     *************************************************************************/
+    const heatEngineCanvas = document.getElementById('heatEngineCanvas');
+    const heCtx = heatEngineCanvas.getContext('2d');
+
+    const heatEngineState = {
+      crankAngle: 0.9,
+      speed: 0.75,
+      paused: false,
+      isExpanding: true,
+      pipeMolecules: [],
+      cylinderMolecules: []
+    };
+
+    function initHeatEngineMolecules() {
+      heatEngineState.pipeMolecules = [];
+      const N = 76;
+      for (let i = 0; i < N; i++) {
+        heatEngineState.pipeMolecules.push({
+          u: i / N,
+          jitterPhase: Math.random() * Math.PI * 2,
+          lateralFrac: (Math.random() - 0.5) * 0.70
+        });
+      }
+      heatEngineState.cylinderMolecules = [];
+      for (let i = 0; i < 32; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        heatEngineState.cylinderMolecules.push({
+          rx: 0.1 + Math.random() * 0.8,
+          ry: 0.1 + Math.random() * 0.8,
+          vx: Math.cos(ang),
+          vy: Math.sin(ang)
+        });
+      }
+    }
+
+    function toggleHeatEnginePause() {
+      heatEngineState.paused = !heatEngineState.paused;
+      document.getElementById('hePauseBtn').textContent = heatEngineState.paused ? '\u25B6 Resume' : '\u23F8 Pause';
+    }
+
+    function holdHeatEngineExpansion() {
+      // Lock crank angle in the middle of the outward expansion stroke (angle = PI/2)
+      heatEngineState.crankAngle = Math.PI * 0.55;
+      heatEngineState.paused = true;
+      document.getElementById('hePauseBtn').textContent = '\u25B6 Resume';
+    }
+
+    function mapUniformToLoopS_HeatEngine(u) {
+      // Modulate spacing so molecules bunch tightly in compressed top/left and spread apart in expanded bottom
+      const s = (u + 0.048 * Math.sin(2 * Math.PI * (u - 0.12))) % 1;
+      return (s + 1) % 1;
+    }
+
+    function getHeatEnginePipeProps(s) {
+      if (s < 0.25) {
+        const t = s / 0.25;
+        return { normT: lerp(0.58, 0.98, t), speedMult: lerp(1.4, 2.2, t) };
+      } else if (s < 0.50) {
+        const t = (s - 0.25) / 0.25;
+        return { normT: lerp(0.98, 0.42, t), speedMult: lerp(2.1, 0.9, t) };
+      } else if (s < 0.75) {
+        const t = (s - 0.50) / 0.25;
+        return { normT: lerp(0.42, 0.06, t), speedMult: lerp(0.85, 0.55, t) };
+      } else {
+        const t = (s - 0.75) / 0.25;
+        return { normT: lerp(0.06, 0.58, t), speedMult: lerp(0.6, 1.4, t) };
+      }
+    }
+
+    function getLoopPoint(s, lateralOffset, loopRect) {
+      const left = loopRect.left, right = loopRect.right, top = loopRect.top, bottom = loopRect.bottom;
+      const w = right - left;
+      const h = bottom - top;
+      let x, y, nx, ny;
+
+      if (s < 0.25) {
+        const t = s / 0.25;
+        x = left + t * w; y = top; nx = 0; ny = 1;
+      } else if (s < 0.50) {
+        const t = (s - 0.25) / 0.25;
+        x = right; y = top + t * h; nx = -1; ny = 0;
+      } else if (s < 0.75) {
+        const t = (s - 0.50) / 0.25;
+        x = right - t * w; y = bottom; nx = 0; ny = -1;
+      } else {
+        const t = (s - 0.75) / 0.25;
+        x = left; y = bottom - t * h; nx = 1; ny = 0;
+      }
+      return { x: x + nx * lateralOffset, y: y + ny * lateralOffset };
+    }
+
+    function placeEnclosureSquare(id, centerX, centerY, size, canvasEl) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const rect = canvasEl.getBoundingClientRect();
+      const scaleX = rect.width / Math.max(1, canvasEl.width);
+      const scaleY = rect.height / Math.max(1, canvasEl.height);
+      const cssW = size * scaleX;
+      const cssH = size * scaleY;
+      el.style.width = Math.round(cssW) + 'px';
+      el.style.height = Math.round(cssH) + 'px';
+      el.style.left = Math.round(centerX * scaleX - cssW / 2) + 'px';
+      el.style.top = Math.round(centerY * scaleY - cssH / 2) + 'px';
+    }
+
+    function updateAndDrawTab2() {
+      const W = heatEngineCanvas.width;
+      const H = heatEngineCanvas.height;
+      heCtx.clearRect(0, 0, W, H);
+      drawLabGrid(heCtx, W, H);
+
+      const loopW = 500;
+      const loopH = 310;
+      const cx = W * 0.45;
+      const cy = H * 0.46;
+      const loopRect = {
+        left: cx - loopW / 2,
+        right: cx + loopW / 2,
+        top: cy - loopH / 2,
+        bottom: cy + loopH / 2,
+        cx: cx,
+        cy: cy
+      };
+      const pipeRadius = 22;
+      const squareSize = 158;
+
+      placeEnclosureSquare('heBox-hot', cx, loopRect.top, squareSize, heatEngineCanvas);
+      placeEnclosureSquare('heBox-engine', loopRect.right + 46, cy, squareSize + 14, heatEngineCanvas);
+      placeEnclosureSquare('heBox-cold', cx, loopRect.bottom, squareSize, heatEngineCanvas);
+      placeEnclosureSquare('heBox-pump', loopRect.left, cy, squareSize, heatEngineCanvas);
+
+      if (!heatEngineState.paused) {
+        heatEngineState.crankAngle = (heatEngineState.crankAngle + 0.032 * heatEngineState.speed) % (Math.PI * 2);
+      }
+
+      const strokeFrac = 0.5 * (1 - Math.cos(heatEngineState.crankAngle));
+      const isExpanding = Math.sin(heatEngineState.crankAngle) >= 0;
+      heatEngineState.isExpanding = isExpanding;
+
+      // Update Hover Popup Text Beneath the Piston Engine Square
+      const titleEl = document.getElementById('hePistonProcessTitle');
+      const subEl = document.getElementById('hePistonProcessSub');
+      const badgeEl = document.getElementById('heStrokeLiveBadge');
+      if (isExpanding) {
+        titleEl.textContent = 'Adiabatic Expansion';
+        titleEl.style.color = '#fbbf24';
+        subEl.innerHTML = 'Piston is pushed <strong>OUT</strong> (Work +W<sub>out</sub>): gas expands, intermolecular distance increases, pressure &amp; temperature drop.';
+        badgeEl.textContent = 'ADIABATIC EXPANSION (PISTON PUSHED OUT)';
+        badgeEl.style.color = '#fbbf24';
+      } else {
+        titleEl.textContent = 'Adiabatic Compression';
+        titleEl.style.color = '#38bdf8';
+        subEl.innerHTML = 'Piston moves <strong>IN</strong>: gas is compressed, intermolecular distance decreases, pressure &amp; temperature rise.';
+        badgeEl.textContent = 'ADIABATIC COMPRESSION (PISTON MOVING IN)';
+        badgeEl.style.color = '#38bdf8';
+      }
+
+      drawClosedPipeTrack(heCtx, loopRect, pipeRadius);
+      drawHeatExchangerBlock(heCtx, cx, loopRect.top, 150, 62, 'HOT RESERVOIR (TH)', '#ef4444', '#f97316', true);
+      drawHeatExchangerBlock(heCtx, cx, loopRect.bottom, 150, 62, 'COLD RESERVOIR (TC)', '#0284c7', '#38bdf8', false);
+      drawInlinePumpModule(heCtx, loopRect.left, cy);
+      drawHorizontalPistonEngine(heCtx, loopRect.right, cy, strokeFrac, isExpanding);
+
+      for (let i = 0; i < heatEngineState.pipeMolecules.length; i++) {
+        const m = heatEngineState.pipeMolecules[i];
+        const s = mapUniformToLoopS_HeatEngine(m.u);
+        const props = getHeatEnginePipeProps(s);
+        if (!heatEngineState.paused) {
+          m.u = (m.u + 0.0012 * heatEngineState.speed * (0.65 + 0.45 * props.speedMult)) % 1;
+          m.jitterPhase += 0.15 * props.speedMult;
+        }
+        const jitter = Math.sin(m.jitterPhase) * (1.8 * props.speedMult);
+        const pt = getLoopPoint(s, m.lateralFrac * (pipeRadius * 1.35) + jitter, loopRect);
+        drawGasMolecule(heCtx, pt.x, pt.y, 5.5, props.normT, 'mono', 0);
+      }
+    }
+
+    function drawClosedPipeTrack(ctx, loopRect, pipeRadius) {
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = pipeRadius * 2 + 6;
+      ctx.strokeRect(loopRect.left, loopRect.top, loopRect.right - loopRect.left, loopRect.bottom - loopRect.top);
+
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = pipeRadius * 2;
+      ctx.strokeRect(loopRect.left, loopRect.top, loopRect.right - loopRect.left, loopRect.bottom - loopRect.top);
+      ctx.restore();
+    }
+
+    function drawHeatExchangerBlock(ctx, x, y, w, h, title, borderCol, finCol, isHot) {
+      ctx.save();
+      ctx.fillStyle = isHot ? 'rgba(127, 29, 29, 0.5)' : 'rgba(12, 74, 110, 0.5)';
+      ctx.strokeStyle = borderCol;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x - w / 2, y - h / 2, w, h, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = finCol;
+      ctx.lineWidth = 1.5;
+      for (let fx = x - w / 2 + 16; fx <= x + w / 2 - 16; fx += 16) {
+        ctx.beginPath();
+        ctx.moveTo(fx, y - h / 2 + 6);
+        ctx.lineTo(fx, y + h / 2 - 6);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(title, x, y - h / 2 - 9);
+      ctx.restore();
+    }
+
+    function drawInlinePumpModule(ctx, x, y) {
+      ctx.save();
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, 28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('\u25B2', x, y + 6);
+      ctx.restore();
+    }
+
+    function drawHorizontalPistonEngine(ctx, pipeX, cy, strokeFrac, isExpanding) {
+      ctx.save();
+      const cylLeft = pipeX + 10;
+      const cylHeight = 86;
+      const cylTop = cy - cylHeight / 2;
+      const minChamberW = 36;
+      const maxChamberW = 94;
+      const chamberW = minChamberW + strokeFrac * (maxChamberW - minChamberW);
+      const pistonW = 18;
+      const cylTotalW = maxChamberW + pistonW + 10;
+
+      const chamberNormT = isExpanding ? lerp(0.95, 0.35, strokeFrac) : lerp(0.28, 0.78, 1 - strokeFrac);
+      const col = getTempRGB(chamberNormT);
+
+      ctx.fillStyle = '#090e1a';
+      ctx.fillRect(cylLeft, cylTop, cylTotalW, cylHeight);
+
+      ctx.fillStyle = 'rgba(' + col.r + ',' + col.g + ',' + col.b + ',0.22)';
+      ctx.fillRect(cylLeft, cylTop, chamberW, cylHeight);
+
+      const speedInside = 1.4 + 3.0 * (1 - strokeFrac * 0.65);
+      for (let i = 0; i < heatEngineState.cylinderMolecules.length; i++) {
+        const m = heatEngineState.cylinderMolecules[i];
+        if (!heatEngineState.paused) {
+          m.rx += (m.vx * speedInside) / chamberW;
+          m.ry += (m.vy * speedInside) / cylHeight;
+          if (m.rx < 0.08) { m.rx = 0.08; m.vx = Math.abs(m.vx); }
+          if (m.rx > 0.90) { m.rx = 0.90; m.vx = -Math.abs(m.vx); }
+          if (m.ry < 0.10) { m.ry = 0.10; m.vy = Math.abs(m.vy); }
+          if (m.ry > 0.90) { m.ry = 0.90; m.vy = -Math.abs(m.vy); }
+        }
+        drawGasMolecule(ctx, cylLeft + m.rx * chamberW, cylTop + m.ry * cylHeight, 4.8, chamberNormT, 'mono', 0);
+      }
+
+      const pistonX = cylLeft + chamberW;
+      ctx.fillStyle = '#cbd5e1';
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(pistonX, cylTop + 2, pistonW, cylHeight - 4);
+      ctx.strokeRect(pistonX, cylTop + 2, pistonW, cylHeight - 4);
+
+      const wheelCenterX = cylLeft + cylTotalW + 26;
+      const crankPinX = wheelCenterX - Math.cos(heatEngineState.crankAngle) * 14;
+      const crankPinY = cy + Math.sin(heatEngineState.crankAngle) * 14;
+
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(wheelCenterX, cy, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(pistonX + pistonW / 2, cy);
+      ctx.lineTo(crankPinX, crankPinY);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(cylLeft + cylTotalW, cylTop);
+      ctx.lineTo(cylLeft, cylTop);
+      ctx.lineTo(cylLeft, cylTop + cylHeight);
+      ctx.lineTo(cylLeft + cylTotalW, cylTop + cylHeight);
+      ctx.stroke();
+
+      ctx.fillStyle = isExpanding ? '#fbbf24' : '#38bdf8';
+      ctx.font = 'bold 11px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(isExpanding ? '\u2794 EXPANDING (OUT)' : '\u2B05 COMPRESSING (IN)', cylLeft + cylTotalW / 2, cylTop - 8);
+      ctx.restore();
+    }
+
+    /*************************************************************************
+     * TAB 3: REVERSE HEAT ENGINE (REFRIGERATION WITH MECHANICAL COMPRESSOR)
+     *************************************************************************/
+    const refrigCanvas = document.getElementById('refrigCanvas');
+    const refCtx = refrigCanvas.getContext('2d');
+
+    const refrigState = {
+      crankAngle: 0,
+      speed: 0.85,
+      pipeMolecules: [],
+      compressorMolecules: []
+    };
+
+    function initRefrigMolecules() {
+      refrigState.pipeMolecules = [];
+      const N = 78;
+      for (let i = 0; i < N; i++) {
+        refrigState.pipeMolecules.push({
+          u: i / N,
+          jitterPhase: Math.random() * Math.PI * 2,
+          lateralFrac: (Math.random() - 0.5) * 0.70
+        });
+      }
+      refrigState.compressorMolecules = [];
+      for (let i = 0; i < 26; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        refrigState.compressorMolecules.push({
+          rx: 0.12 + Math.random() * 0.76,
+          ry: 0.12 + Math.random() * 0.76,
+          vx: Math.cos(ang),
+          vy: Math.sin(ang)
+        });
+      }
+    }
+
+    /**
+     * Refrigeration flow goes Counter-Clockwise (1 - s):
+     * - Compressor on Right (s = 0.38) pumps hot high-pressure gas UP to Top Condenser (s = 0.25 -> 0.0)
+     * - Top Condenser flows Left to Expansion Valve on Left (s = 0.88)
+     * - Expansion Valve drops pressure/temp into Bottom Evaporator (s = 0.75 -> 0.50) back to Compressor
+     */
+    function mapUniformToLoopS_Refrig(u) {
+      if (u < 0.68) {
+        // Pack 68% of molecules into the High-Pressure Top Branch (small distance / low volume)
+        const local = u / 0.68;
+        return (0.88 + local * 0.50) % 1;
+      } else {
+        // Spread 32% of molecules widely across the Low-Pressure Bottom Branch (large distance / expanded volume)
+        const local = (u - 0.68) / 0.32;
+        return 0.38 + local * 0.50;
+      }
+    }
+
+    function getRefrigPipeProps(s) {
+      const inHighP = (s >= 0.88 || s < 0.38);
+      if (inHighP) {
+        // High-Pressure Condenser branch (Right Compressor -> Top Condenser -> Left Expansion Valve)
+        const progressFromComp = s < 0.38 ? (0.38 - s) / 0.50 : (1.38 - s) / 0.50;
+        const normT = lerp(0.98, 0.56, progressFromComp);
+        return { normT: normT, speedMult: 2.15, highP: true };
+      } else {
+        // Low-Pressure Evaporator branch (Left Expansion Valve -> Bottom Evaporator -> Right Compressor)
+        const progressFromValve = (0.88 - s) / 0.50;
+        const normT = lerp(0.04, 0.28, progressFromValve);
+        return { normT: normT, speedMult: 0.58, highP: false };
+      }
+    }
+
+    function updateAndDrawTab3() {
+      const W = refrigCanvas.width;
+      const H = refrigCanvas.height;
+      refCtx.clearRect(0, 0, W, H);
+      drawLabGrid(refCtx, W, H);
+
+      const loopW = 500;
+      const loopH = 310;
+      const cx = W * 0.48;
+      const cy = H * 0.46;
+      const loopRect = {
+        left: cx - loopW / 2,
+        right: cx + loopW / 2,
+        top: cy - loopH / 2,
+        bottom: cy + loopH / 2,
+        cx: cx,
+        cy: cy
+      };
+      const pipeRadius = 22;
+      const squareSize = 158;
+
+      // Place the 4 Solid-to-Dashed Squares: Compressor on Right (replacing Piston Engine!), Condenser Top, Valve Left, Evaporator Bottom
+      placeEnclosureSquare('refBox-compressor', loopRect.right, cy, squareSize, refrigCanvas);
+      placeEnclosureSquare('refBox-condenser', cx, loopRect.top, squareSize, refrigCanvas);
+      placeEnclosureSquare('refBox-valve', loopRect.left, cy, squareSize, refrigCanvas);
+      placeEnclosureSquare('refBox-evaporator', cx, loopRect.bottom, squareSize, refrigCanvas);
+
+      refrigState.crankAngle = (refrigState.crankAngle + 0.045 * refrigState.speed) % (Math.PI * 2);
+      const compStroke = 0.5 * (1 - Math.cos(refrigState.crankAngle));
+
+      drawClosedPipeTrack(refCtx, loopRect, pipeRadius);
+      drawHeatExchangerBlock(refCtx, cx, loopRect.top, 165, 62, 'CONDENSER (HOT SIDE -QH)', '#f97316', '#fbbf24', true);
+      drawHeatExchangerBlock(refCtx, cx, loopRect.bottom, 165, 62, 'EVAPORATOR (COLD SPACE +QC)', '#06b6d4', '#67e8f9', false);
+      drawExpansionValveComponent(refCtx, loopRect.left, cy);
+      drawMechanicalCompressorComponent(refCtx, loopRect.right, cy, compStroke);
+
+      for (let i = 0; i < refrigState.pipeMolecules.length; i++) {
+        const m = refrigState.pipeMolecules[i];
+        m.u = (m.u - 0.0014 * refrigState.speed + 1) % 1;
+        const s = mapUniformToLoopS_Refrig(m.u);
+        const props = getRefrigPipeProps(s);
+        m.jitterPhase += 0.16 * props.speedMult;
+
+        const jitter = Math.sin(m.jitterPhase) * (props.highP ? 3.0 : 1.1);
+        const spread = props.highP ? pipeRadius * 0.82 : pipeRadius * 1.45;
+        const pt = getLoopPoint(s, m.lateralFrac * spread + jitter, loopRect);
+        drawGasMolecule(refCtx, pt.x, pt.y, 5.5, props.normT, 'poly', m.jitterPhase * 0.25);
+      }
+    }
+
+    function drawMechanicalCompressorComponent(ctx, x, y, compStroke) {
+      ctx.save();
+      const boxW = 82;
+      const boxH = 102;
+      const left = x - boxW / 2;
+      const top = y - boxH / 2;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(left, top, boxW, boxH, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      const minChamberH = 22;
+      const maxChamberH = 56;
+      const chamberH = maxChamberH - compStroke * (maxChamberH - minChamberH);
+      const pistonY = top + 8 + chamberH;
+
+      const normT = lerp(0.28, 0.96, compStroke);
+      const col = getTempRGB(normT);
+      ctx.fillStyle = 'rgba(' + col.r + ',' + col.g + ',' + col.b + ',0.25)';
+      ctx.fillRect(left + 6, top + 8, boxW - 12, chamberH);
+
+      for (let i = 0; i < refrigState.compressorMolecules.length; i++) {
+        const m = refrigState.compressorMolecules[i];
+        m.rx += m.vx * (0.04 + compStroke * 0.04);
+        m.ry += m.vy * (0.04 + compStroke * 0.04);
+        if (m.rx < 0.12) { m.rx = 0.12; m.vx = Math.abs(m.vx); }
+        if (m.rx > 0.88) { m.rx = 0.88; m.vx = -Math.abs(m.vx); }
+        if (m.ry < 0.14) { m.ry = 0.14; m.vy = Math.abs(m.vy); }
+        if (m.ry > 0.86) { m.ry = 0.86; m.vy = -Math.abs(m.vy); }
+        drawGasMolecule(ctx, left + 8 + m.rx * (boxW - 16), top + 8 + m.ry * chamberH, 4.4, normT, 'poly', 0);
+      }
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(left + 6, pistonY, boxW - 12, 12);
+
+      const crankY = top + boxH - 18;
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(x, crankY, 11, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const pinX = x + Math.sin(refrigState.crankAngle) * 7;
+      const pinY = crankY + Math.cos(refrigState.crankAngle) * 7;
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(x, pistonY + 6);
+      ctx.lineTo(pinX, pinY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 10px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('COMPRESSOR (+Win)', x, top - 8);
+      ctx.restore();
+    }
+
+    function drawExpansionValveComponent(ctx, x, y) {
+      ctx.save();
+      const w = 54;
+      const h = 78;
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(x - w / 2, y - h / 2);
+      ctx.lineTo(x + w / 2, y - h / 2);
+      ctx.lineTo(x + 8, y);
+      ctx.lineTo(x + w / 2, y + h / 2);
+      ctx.lineTo(x - w / 2, y + h / 2);
+      ctx.lineTo(x - 8, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#7dd3fc';
+      ctx.font = 'bold 10px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('EXPANSION VALVE', x, y - h / 2 - 8);
+      ctx.restore();
+    }
+
+    /*************************************************************************
+     * INITIALIZATION & ANIMATION LOOP
+     *************************************************************************/
+    function setupSquareInteractions() {
+      const squares = document.querySelectorAll('.cycle-square-enclosure');
+      squares.forEach(function(sq) {
+        sq.addEventListener('touchstart', function(e) {
+          e.stopPropagation();
+          squares.forEach(function(other) {
+            if (other !== sq) other.classList.remove('touch-active');
+          });
+          sq.classList.toggle('touch-active');
+        }, { passive: true });
+      });
+    }
+
+    function handleResizeAll() {
+      const holder1 = document.getElementById('pistonCanvasHolder');
+      if (holder1 && holder1.clientWidth > 100) {
+        pistonCanvas.width = Math.max(720, holder1.clientWidth);
+        pistonCanvas.height = Math.max(480, holder1.clientHeight);
+      }
+      const holder2 = document.getElementById('heStageContainer');
+      if (holder2 && holder2.clientWidth > 100) {
+        heatEngineCanvas.width = Math.max(850, holder2.clientWidth);
+        heatEngineCanvas.height = Math.max(520, holder2.clientHeight);
+      }
+      const holder3 = document.getElementById('refStageContainer');
+      if (holder3 && holder3.clientWidth > 100) {
+        refrigCanvas.width = Math.max(850, holder3.clientWidth);
+        refrigCanvas.height = Math.max(520, holder3.clientHeight);
+      }
+    }
+
+    function mainAnimationLoop() {
+      if (activeTab === 1) {
+        updateAndDrawTab1();
+      } else if (activeTab === 2) {
+        updateAndDrawTab2();
+      } else if (activeTab === 3) {
+        updateAndDrawTab3();
+      }
+      requestAnimationFrame(mainAnimationLoop);
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+      handleResizeAll();
+      initTab1Molecules();
+      initHeatEngineMolecules();
+      initRefrigMolecules();
+      setupTab1Events();
+      setupSquareInteractions();
+      updateTab1UI();
+      window.addEventListener('resize', handleResizeAll);
+      requestAnimationFrame(mainAnimationLoop);
+    });
+  </script>
+</body>
+</html>
